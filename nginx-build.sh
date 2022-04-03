@@ -979,7 +979,7 @@ _configure_nginx() {
         fi
 
 
-        CFLAGS="-Wno-ignored-qualifiers" bash -c "./auto/configure  ${NGX_NAXSI} \
+        CFLAGS="-Wno-ignored-qualifiers" bash -c "/usr/local/src/nginx/auto/configure  ${NGX_NAXSI} \
                     --with-cc-opt='$DEB_CFLAGS' \
                     --with-ld-opt='$DEB_LFLAGS' \
                     $NGINX_BUILD_OPTIONS \
@@ -1002,8 +1002,7 @@ _configure_nginx() {
                     --add-module=../ngx_brotli \
                     --with-openssl-opt='enable-tls1_3' \
                     --with-zlib=$ZLIB_PATH \
-                    $NGX_SSL_LIB \
-                    --sbin-path=/usr/sbin/nginx"
+                    $NGX_SSL_LIB --sbin-path=/usr/sbin/nginx"
 
                 
 
