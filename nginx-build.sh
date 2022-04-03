@@ -166,7 +166,7 @@ readonly DISTRO_CODENAME="$(lsb_release -sc)"
 readonly DISTRO_NUMBER="$(lsb_release -sr)"
 OPENSSL_COMMIT="7fa8bcfe4342df41919f5564b315f9c85d0a02d6"
 
-RUN apt update && apt install -y \
+apt update && apt install -y \
     mercurial \
     make \
     cmake \
@@ -179,7 +179,7 @@ RUN apt update && apt install -y \
     libpcre3-dev \
     libunwind-dev
 
-git clone https://boringssl.googlesource.com/boringssl /usr/local/src
+git clone https://boringssl.googlesource.com/boringssl /usr/local/src/boringssl
 mkdir  /usr/local/src/boringssl/build
 cd  /usr/local/src/boringssl/build  && cmake .. && make
 
@@ -285,10 +285,10 @@ fi
 
 if [ "$NGINX_RELEASE" = "2" ]; then
     NGINX_VER="$NGINX_STABLE"
-    NGX_HPACK="--with-http_v2_hpack_enc"
+    #="--with-http_v2_hpack_enc"
 else
     NGINX_VER="$NGINX_MAINLINE"
-    NGX_HPACK="--with-http_v2_hpack_enc"
+    #NGX_HPACK="--with-http_v2_hpack_enc"
 fi
 
 ##################################
@@ -934,7 +934,7 @@ _download_nginx() {
 
         {
             rm -rf /usr/local/src/nginx
-            hg clone -b quic https://hg.nginx.org/nginx-quic "$DIR_SRC"
+            hg clone -b quic https://hg.nginx.org/nginx-quic /usr/local/src/nginx-quic
             mv /usr/local/src/nginx-quic /usr/local/src/nginx
         } >>/tmp/nginx-ee.log 2>&1
         
@@ -958,22 +958,22 @@ _download_nginx() {
 _patch_nginx() {
 
     cd /usr/local/src/nginx || exit 1
-    if {
-        echo -ne '       Applying nginx patches                 [..]\r'
+    # if {
+    #     echo -ne '       Applying nginx patches                 [..]\r'
 
-        {
-            curl -sL https://raw.githubusercontent.com/kn007/patch/master/nginx.patch | patch -p1
-            #curl -sL https://raw.githubusercontent.com/kn007/patch/master/nginx_auto_using_PRIORITIZE_CHACHA.patch | patch -p1
-        } >>/tmp/nginx-ee.log 2>&1
+    #     {
+    #         curl -sL https://raw.githubusercontent.com/kn007/patch/master/nginx.patch | patch -p1
+    #         #curl -sL https://raw.githubusercontent.com/kn007/patch/master/nginx_auto_using_PRIORITIZE_CHACHA.patch | patch -p1
+    #     } >>/tmp/nginx-ee.log 2>&1
 
-    }; then
-        echo -ne "       Applying nginx patches                 [${CGREEN}OK${CEND}]\\r"
-        echo -ne '\n'
-    else
-        echo -e "       Applying nginx patches                 [${CRED}FAIL${CEND}]"
-        echo -e '\n      Please look at /tmp/nginx-ee.log\n'
-        exit 1
-    fi
+    # }; then
+    #     echo -ne "       Applying nginx patches                 [${CGREEN}OK${CEND}]\\r"
+    #     echo -ne '\n'
+    # else
+    #     echo -e "       Applying nginx patches                 [${CRED}FAIL${CEND}]"
+    #     echo -e '\n      Please look at /tmp/nginx-ee.log\n'
+    #     exit 1
+    # fi
 
 }
 
@@ -987,8 +987,8 @@ _patch_nginx() {
 _configure_nginx() {
     local DEB_CFLAGS
     local DEB_LFLAGS
-    DEB_CFLAGS="$(dpkg-buildflags --get CPPFLAGS) -Wno-error=date-time"
-    DEB_LFLAGS="$(dpkg-buildflags --get LDFLAGS)"
+    DEB_CFLAGS="$(dpkg-buildflags --get CPPFLAGS) -Wno-error=date-time -I../boringssl/include"
+    DEB_LFLAGS="$(dpkg-buildflags --get LDFLAGS) -L../boringssl/build/ssl -L../boringssl/build/crypto"
 
     if {
         echo -ne '       Configuring nginx build                [..]\r'
@@ -1060,21 +1060,22 @@ _configure_nginx() {
         else
             ZLIB_PATH='../zlib'
         fi
-        bash -c "./configure \
-                    ${NGX_NAXSI} \
+
+                                          #                     --sbin-path=/usr/sbin/nginx
+
+
+        CFLAGS="-Wno-ignored-qualifiers" bash -c "./auto/configure  ${NGX_NAXSI} \
                     --with-cc-opt='$DEB_CFLAGS' \
                     --with-ld-opt='$DEB_LFLAGS' \
                     $NGINX_BUILD_OPTIONS \
-                    --build='VirtuBox Nginx-ee' \
                     $NGX_USER \
                     --with-file-aio \
                     --with-threads \
-    --with-http_v3_module \
-    --with-cc-opt="-I../boringssl/include" \
-    --with-ld-opt="-L../boringssl/build/ssl -L../boringssl/build/crypto" \
-                    $NGX_HPACK \
-                    --with-http_v2_module \
-                    --with-http_ssl_module \
+                    --with-http_v3_module \
+                    --with-stream_quic_module --with-http_v2_module --with-http_ssl_module \
+                     --with-stream \
+      --with-stream_ssl_module \
+      --with-stream_ssl_preread_module \
                     --with-pcre-jit \
                     $NGINX_INCLUDED_MODULES \
                     $NGINX_THIRD_MODULES \
@@ -1084,10 +1085,12 @@ _configure_nginx() {
                     --add-module=../headers-more-nginx-module \
                     --add-module=../ngx_cache_purge \
                     --add-module=../ngx_brotli \
+                    --with-openssl-opt='enable-tls1_3' \
                     --with-zlib=$ZLIB_PATH \
                     $NGX_SSL_LIB \
-                    --with-openssl-opt='$OPENSSL_OPT' \
-                    --sbin-path=/usr/sbin/nginx >> /tmp/nginx-ee.log 2>&1;"
+                    --sbin-path=/usr/sbin/nginx" >> /tmp/nginx-ee.log 2>&1;
+
+                
 
     }; then
         echo -ne "       Configuring nginx build                [${CGREEN}OK${CEND}]\\r"
@@ -1192,50 +1195,10 @@ _final_tasks() {
 
     echo -ne '       Performing final steps                 [..]\r'
     if {
-        # block Nginx package update from APT repository
-        if [ "$PLESK_VALID" = "YES" ]; then
-            {
-                # update nginx ciphers_suites
-                # sed -i "s/ssl_ciphers\ \(\"\|.\|'\)\(.*\)\(\"\|.\|'\);/ssl_ciphers \"$TLS13_CIPHERS\";/" /etc/nginx/conf.d/ssl.conf
-                # update nginx ssl_protocols
-                # sed -i "s/ssl_protocols\ \(.*\);/ssl_protocols TLSv1.2 TLSv1.3;/" /etc/nginx/conf.d/ssl.conf
-                # block sw-nginx package updates from APT repository
-                echo -e 'Package: sw-nginx*\nPin: release *\nPin-Priority: -1' >/etc/apt/preferences.d/nginx-block
-                apt-mark hold sw-nginx
-            } >>/tmp/nginx-ee.log
-        elif [ "$EE_VALID" = "YES" ]; then
-            {
-                # update nginx ssl_protocols
-                sed -i "s/ssl_protocols\ \(.*\);/ssl_protocols TLSv1.2 TLSv1.3;/" /etc/nginx/nginx.conf
-                # update nginx ciphers_suites
-                sed -i "s/ssl_ciphers\ \(\"\|'\)\(.*\)\(\"\|'\)/ssl_ciphers \"$TLS13_CIPHERS\"/" /etc/nginx/nginx.conf
-                # block nginx package updates from APT repository
-                echo -e 'Package: nginx*\nPin: release *\nPin-Priority: -1' >/etc/apt/preferences.d/nginx-block
-                apt-mark hold nginx-ee nginx-common nginx-custom
-            } >>/tmp/nginx-ee.log
-        elif [ "$WO_VALID" = "YES" ]; then
-            {
-                # update nginx ssl_protocols
-                # sed -i "s/ssl_protocols\ \(.*\);/ssl_protocols TLSv1.2 TLSv1.3;/" /etc/nginx/nginx.conf
-                # update nginx ciphers_suites
-                # sed -i "s/ssl_ciphers\ \(\"\|.\|'\)\(.*\)\(\"\|.\|'\);/ssl_ciphers \"$TLS13_CIPHERS\";/" /etc/nginx/nginx.conf
-                # block nginx package updates from APT repository
-                echo -e 'Package: nginx*\nPin: release *\nPin-Priority: -1' >/etc/apt/preferences.d/nginx-block
-                CHECK_NGINX_WO=$(dpkg --list | grep nginx-wo)
-                if [ -n "$CHECK_NGINX_WO" ]; then
-                    apt-mark hold nginx-wo nginx-common nginx-custom
-                else
-                    apt-mark hold nginx-ee nginx-common nginx-custom
-                fi
-            } >>/tmp/nginx-ee.log 2>&1
-        fi
-
+  
         if [ "$NOCONF" != "y" ]; then
             {
                 # enable nginx service
-                systemctl unmask nginx.service
-                systemctl enable nginx.service
-                systemctl start nginx.service
                 # remove default configuration
                 rm -f /etc/nginx/{*.default,*.dpkg-dist}
             } >/dev/null 2>&1
