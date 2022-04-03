@@ -704,22 +704,6 @@ _download_zlib() {
 _download_brotli() {
 
     cd "$DIR_SRC" || exit 1
-    if {
-        echo -ne '       Downloading brotli                     [..]\r'
-        {
-            #rm /usr/local/src/ngx_brotli -rf
-            #git clone --depth=1 https://github.com/google/ngx_brotli /usr/local/src/ngx_brotli -q
-
-        } >>/tmp/nginx-ee.log 2>&1
-
-    }; then
-        echo -ne "       Downloading brotli                     [${CGREEN}OK${CEND}]\\r"
-        echo -ne '\n'
-    else
-        echo -e "       Downloading brotli      [${CRED}FAIL${CEND}]"
-        echo -e '\n      Please look at /tmp/nginx-ee.log\n'
-        exit 1
-    fi
 
 }
 
