@@ -166,6 +166,23 @@ readonly DISTRO_CODENAME="$(lsb_release -sc)"
 readonly DISTRO_NUMBER="$(lsb_release -sr)"
 OPENSSL_COMMIT="7fa8bcfe4342df41919f5564b315f9c85d0a02d6"
 
+RUN apt update && apt install -y \
+    mercurial \
+    make \
+    cmake \
+    golang \
+    gcc \
+    g++ \
+    git \
+    openssl \
+    zlib1g-dev \
+    libpcre3-dev \
+    libunwind-dev
+
+git clone https://boringssl.googlesource.com/boringssl /usr/local/src
+mkdir  /usr/local/src/boringssl/build
+cd  /usr/local/src/boringssl/build  && cmake .. && make
+
 # Colors
 CSI='\033['
 CRED="${CSI}1;31m"
@@ -917,9 +934,11 @@ _download_nginx() {
 
         {
             rm -rf /usr/local/src/nginx
-            curl -sL http://nginx.org/download/nginx-${NGINX_VER}.tar.gz | /bin/tar xzf - -C "$DIR_SRC"
-            mv /usr/local/src/nginx-${NGINX_VER} /usr/local/src/nginx
+            hg clone -b quic https://hg.nginx.org/nginx-quic "$DIR_SRC"
+            mv /usr/local/src/nginx-quic /usr/local/src/nginx
         } >>/tmp/nginx-ee.log 2>&1
+        
+        
 
     }; then
         echo -ne "       Downloading nginx                      [${CGREEN}OK${CEND}]\\r"
@@ -961,6 +980,9 @@ _patch_nginx() {
 ##################################
 # Configure Nginx
 ##################################
+# Build BoringSSL
+
+
 
 _configure_nginx() {
     local DEB_CFLAGS
@@ -1047,6 +1069,9 @@ _configure_nginx() {
                     $NGX_USER \
                     --with-file-aio \
                     --with-threads \
+    --with-http_v3_module \
+    --with-cc-opt="-I../boringssl/include" \
+    --with-ld-opt="-L../boringssl/build/ssl -L../boringssl/build/crypto" \
                     $NGX_HPACK \
                     --with-http_v2_module \
                     --with-http_ssl_module \
