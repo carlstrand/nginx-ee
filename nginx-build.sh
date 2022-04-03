@@ -171,7 +171,7 @@ CSI='\033['
 CRED="${CSI}1;31m"
 CGREEN="${CSI}1;32m"
 CEND="${CSI}0m"
-
+cd  /usr/local/src/boringssl/build  && cmake .. && make
 ##################################
 # Initial check & cleanup
 ##################################
