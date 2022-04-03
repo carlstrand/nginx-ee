@@ -862,25 +862,6 @@ _download_pagespeed() {
 _download_nginx() {
 
     cd "$DIR_SRC" || exit 1
-    if {
-        echo -ne '       Downloading nginx                      [..]\r'
-
-        {
-            #rm -rf /usr/local/src/nginx
-            #hg clone -b quic https://hg.nginx.org/nginx-quic /usr/local/src/nginx-quic
-            #mv /usr/local/src/nginx-quic /usr/local/src/nginx
-        } >>/tmp/nginx-ee.log 2>&1
-        
-        
-
-    }; then
-        echo -ne "       Downloading nginx                      [${CGREEN}OK${CEND}]\\r"
-        echo -ne '\n'
-    else
-        echo -e "       Downloading nginx      [${CRED}FAIL${CEND}]"
-        echo -e '\n      Please look at /tmp/nginx-ee.log\n'
-        exit 1
-    fi
 
 }
 
