@@ -999,7 +999,7 @@ _configure_nginx() {
                     --with-openssl-opt='enable-tls1_3' \
                     --with-zlib=$ZLIB_PATH \
                     $NGX_SSL_LIB \
-                    --sbin-path=/usr/sbin/nginx" >> /tmp/nginx-ee.log 2>&1;
+                    --sbin-path=/usr/sbin/nginx"
 
                 
 
