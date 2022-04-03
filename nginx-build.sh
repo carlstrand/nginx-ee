@@ -861,8 +861,12 @@ _download_pagespeed() {
 
 _download_nginx() {
 
-    cd "$DIR_SRC" || exit 1
-
+   # cd "$DIR_SRC" || exit 1
+hg clone https://hg.nginx.org/nginx-quic  && \
+    hg clone http://hg.nginx.org/njs -r "0.6.2" && \
+    cd nginx-quic && \
+    hg update quic && \
+    mv /usr/local/src/nginx-quic /usr/local/src/nginx
 }
 
 ##################################
