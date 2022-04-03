@@ -72,7 +72,7 @@ else
             ;;
         --full)
             PAGESPEED="y"
-            PAGESPEED_RELEASE="2"
+            PAGESPEED_RELEASE="2" 
             NAXSI="y"
             RTMP="y"
             ;;
@@ -80,7 +80,7 @@ else
             NOCONF="y"
             ;;
         --naxsi)
-            NAXSI="y"
+            NAXSI="n"
             ;;
         --openssl-dev)
             OPENSSL_LIB="2"
@@ -101,16 +101,16 @@ else
             NGINX_RELEASE="2"
             ;;
         -i | --interactive)
-            INTERACTIVE_SETUP="1"
+            INTERACTIVE_SETUP="0"
             ;;
         --dynamic)
             DYNAMIC_MODULES="y"
             ;;
         --cron | --cronjob)
-            CRON_SETUP="y"
+            CRON_SETUP="n"
             ;;
         --travis)
-            TRAVIS_BUILD="1"
+            TRAVIS_BUILD="0"
             ;;
         -h | --help)
             _help
