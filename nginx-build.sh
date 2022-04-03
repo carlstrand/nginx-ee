@@ -882,9 +882,9 @@ _download_nginx() {
         echo -ne '       Downloading nginx                      [..]\r'
 
         {
-            rm -rf /usr/local/src/nginx
-            hg clone -b quic https://hg.nginx.org/nginx-quic /usr/local/src/nginx-quic
-            mv /usr/local/src/nginx-quic /usr/local/src/nginx
+            #rm -rf /usr/local/src/nginx
+            #hg clone -b quic https://hg.nginx.org/nginx-quic /usr/local/src/nginx-quic
+            #mv /usr/local/src/nginx-quic /usr/local/src/nginx
         } >>/tmp/nginx-ee.log 2>&1
         
         
