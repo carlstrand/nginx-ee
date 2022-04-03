@@ -166,23 +166,6 @@ readonly DISTRO_CODENAME="$(lsb_release -sc)"
 readonly DISTRO_NUMBER="$(lsb_release -sr)"
 OPENSSL_COMMIT="7fa8bcfe4342df41919f5564b315f9c85d0a02d6"
 
-apt update && apt install -y \
-    mercurial \
-    make \
-    cmake \
-    golang \
-    gcc \
-    g++ \
-    git \
-    openssl \
-    zlib1g-dev \
-    libpcre3-dev \
-    libunwind-dev
-
-git clone https://boringssl.googlesource.com/boringssl /usr/local/src/boringssl
-mkdir  /usr/local/src/boringssl/build
-cd  /usr/local/src/boringssl/build  && cmake .. && make
-
 # Colors
 CSI='\033['
 CRED="${CSI}1;31m"
@@ -363,15 +346,6 @@ else
     PAGESPEED_VALID="NO"
 fi
 
-##################################
-# Set Plesk configuration
-##################################
-
-if [ "$PLESK_VALID" = "YES" ]; then
-    NGX_USER="--user=nginx --group=nginx"
-else
-    NGX_USER=""
-fi
 
 if [ "$DYNAMIC_MODULES" = "y" ]; then
     DYNAMIC_MODULES_VALID="YES"
@@ -435,11 +409,7 @@ _install_dependencies() {
     echo -ne '       Installing dependencies                [..]\r'
     if {
         apt-get -o Dpkg::Options::="--force-confmiss" -o Dpkg::Options::="--force-confold" -y install \
-            git build-essential libtool automake autoconf \
-            libgd-dev dpkg-dev libgeoip-dev libjemalloc-dev \
-            libbz2-1.0 libreadline-dev libbz2-dev libbz2-ocaml libbz2-ocaml-dev software-properties-common tar \
-            libgoogle-perftools-dev perl libperl-dev libpam0g-dev libbsd-dev gnupg gnupg2 \
-            libgmp-dev autotools-dev libxml2-dev libpcre3-dev uuid-dev libbrotli-dev "$LIBSSL_DEV"
+            git "$LIBSSL_DEV"
     } >>/tmp/nginx-ee.log 2>&1; then
         echo -ne "       Installing dependencies                [${CGREEN}OK${CEND}]\\r"
         echo -ne '\n'
@@ -460,21 +430,11 @@ _nginx_from_scratch_setup() {
     echo -ne '       Setting Up Nginx configurations        [..]\r'
     if {
         # clone custom nginx configuration
-        [ ! -d /etc/nginx ] && {
-            git clone --depth 50 https://github.com/VirtuBox/nginx-config.git /etc/nginx
-        } >>/tmp/nginx-ee.log 2>&1
+        #[ ! -d /etc/nginx ] && {
+        #    git clone --depth 50 https://github.com/VirtuBox/nginx-config.git /etc/nginx
+        #} >>/tmp/nginx-ee.log 2>&1
 
-        # create nginx temp directory
-        mkdir -p /var/lib/nginx/{body,fastcgi,proxy,scgi,uwsgi}
-        # create nginx cache directory
-        [ ! -d /var/cache/nginx ] && {
-            mkdir -p /var/cache/nginx
-        }
-        [ ! -d /var/run/nginx-cache ] && {
-            mkdir -p /var/run/nginx-cache
-        }
         [ ! -d /var/log/nginx ] && {
-            mkdir -p /var/log/nginx
             chmod 640 /var/log/nginx
             chown -R www-data:adm /var/log/nginx
         }
@@ -482,23 +442,12 @@ _nginx_from_scratch_setup() {
         # set proper permissions
         chown -R www-data:root /var/lib/nginx /var/cache/nginx /var/run/nginx-cache
 
-        # create websites directory
-        [ ! -d /var/www/html ] && {
-            mkdir -p /var/www/html
-        }
 
         {
             # download default nginx page
             wget -O /var/www/html/index.nginx-debian.html https://raw.githubusercontent.com/VirtuBox/nginx-ee/master/var/www/html/index.nginx-debian.html
             mkdir -p /etc/nginx/sites-enabled
             ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
-            # download nginx systemd service
-            [ ! -f /lib/systemd/system/nginx.service ] && {
-                wget -O /lib/systemd/system/nginx.service https://raw.githubusercontent.com/VirtuBox/nginx-ee/master/etc/systemd/system/nginx.service
-                systemctl enable nginx.service
-            }
-
-            # download logrotate configuration
             wget -O /etc/logrotate.d/nginx https://raw.githubusercontent.com/VirtuBox/nginx-ee/master/etc/logrotate.d/nginx
 
         } >>/tmp/nginx-ee.log 2>&1
@@ -758,8 +707,8 @@ _download_brotli() {
     if {
         echo -ne '       Downloading brotli                     [..]\r'
         {
-            rm /usr/local/src/ngx_brotli -rf
-            git clone --depth=1 https://github.com/google/ngx_brotli /usr/local/src/ngx_brotli -q
+            #rm /usr/local/src/ngx_brotli -rf
+            #git clone --depth=1 https://github.com/google/ngx_brotli /usr/local/src/ngx_brotli -q
 
         } >>/tmp/nginx-ee.log 2>&1
 
@@ -846,7 +795,7 @@ _download_libressl() {
         echo -ne '       Downloading LibreSSL                   [..]\r'
 
         {
-            rm -rf /usr/local/src/libressl
+            #rm -rf /usr/local/src/libressl
             curl -sL http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRESSL_VER}.tar.gz | /bin/tar xzf - -C "$DIR_SRC"
             mv /usr/local/src/libressl-${LIBRESSL_VER} /usr/local/src/libressl
         } >>/tmp/nginx-ee.log 2>&1
@@ -873,7 +822,7 @@ _download_naxsi() {
         echo -ne '       Downloading naxsi                      [..]\r'
         {
 
-            git clone --depth=50 https://github.com/nbs-system/naxsi.git /usr/local/src/naxsi -q
+           # git clone --depth=50 https://github.com/nbs-system/naxsi.git /usr/local/src/naxsi -q
 
             if [ "$NOCONF" != "y" ]; then
                 cp -f /usr/local/src/naxsi/naxsi_config/naxsi_core.rules /etc/nginx/naxsi_core.rules
@@ -1141,29 +1090,7 @@ _compile_nginx() {
 _updating_nginx_manual() {
 
     echo -ne '       Updating Nginx manual                  [..]\r'
-    if {
-        # update nginx manual
-        [ -f /usr/share/man/man8/nginx.8.gz ] && {
-            rm /usr/share/man/man8/nginx.8.gz
-        }
 
-        {
-            cp -f ${DIR_SRC}/nginx/man/nginx.8 /usr/share/man/man8
-            gzip /usr/share/man/man8/nginx.8
-
-        } >>/tmp/nginx-ee.log
-
-        # update mime.types
-        cp -f ${DIR_SRC}/nginx/conf/mime.types /etc/nginx/mime.types
-
-    }; then
-        echo -ne "       Updating Nginx manual                  [${CGREEN}OK${CEND}]\\r"
-        echo -ne '\n'
-    else
-        echo -e "       Updating Nginx manual                  [${CRED}FAIL${CEND}]"
-        echo -e '\n      Please look at /tmp/nginx-ee.log\n'
-        exit 1
-    fi
 
 }
 
@@ -1218,10 +1145,10 @@ _final_tasks() {
     if [ "$NOCONF" != "y" ]; then
         # check if nginx -t do not return errors
         VERIFY_NGINX_CONFIG=$(nginx -t 2>&1 | grep failed)
+        
         if [ -z "$VERIFY_NGINX_CONFIG" ]; then
             {
-                systemctl stop nginx
-                systemctl start nginx
+               nginx
             } >>/tmp/nginx-ee.log 2>&1
             echo -ne "       Checking nginx configuration           [${CGREEN}OK${CEND}]\\r"
             echo ""
