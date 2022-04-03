@@ -869,10 +869,9 @@ _download_nginx() {
 # Apply Nginx patches
 ##################################
 
-_patch_nginx() {
+#_patch_nginx() {
 
-    cd /usr/local/src/nginx || exit 1
-    # if {
+ 
     #     echo -ne '       Applying nginx patches                 [..]\r'
 
     #     {
@@ -889,7 +888,7 @@ _patch_nginx() {
     #     exit 1
     # fi
 
-}
+#}
 
 ##################################
 # Configure Nginx
@@ -939,7 +938,7 @@ _configure_nginx() {
         if [ -z "$OVERRIDE_NGINX_ADDITIONAL_MODULES" ]; then
             if [ "$DYNAMIC_MODULES" = "y" ]; then
                 NGINX_THIRD_MODULES="--with-compat \
-         --add-module=../ngx_http_substitutions_filter_module \
+        --add-module=../ngx_http_substitutions_filter_module \
         --add-dynamic-module=../srcache-nginx-module \
         --add-dynamic-module=../ngx_http_redis \
         --add-dynamic-module=../redis2-nginx-module \
@@ -975,8 +974,6 @@ _configure_nginx() {
             ZLIB_PATH='../zlib'
         fi
 
-                                          #                     --sbin-path=/usr/sbin/nginx
-
 
         CFLAGS="-Wno-ignored-qualifiers" bash -c "./auto/configure  ${NGX_NAXSI} \
                     --with-cc-opt='$DEB_CFLAGS' \
@@ -987,9 +984,9 @@ _configure_nginx() {
                     --with-threads \
                     --with-http_v3_module \
                     --with-stream_quic_module --with-http_v2_module --with-http_ssl_module \
-                     --with-stream \
-      --with-stream_ssl_module \
-      --with-stream_ssl_preread_module \
+                    --with-stream \
+                    --with-stream_ssl_module \
+                    --with-stream_ssl_preread_module \
                     --with-pcre-jit \
                     $NGINX_INCLUDED_MODULES \
                     $NGINX_THIRD_MODULES \
@@ -1112,9 +1109,9 @@ _final_tasks() {
         VERIFY_NGINX_CONFIG=$(nginx -t 2>&1 | grep failed)
         
         if [ -z "$VERIFY_NGINX_CONFIG" ]; then
-            {
-               nginx
-            } >>/tmp/nginx-ee.log 2>&1
+            # {
+            # nginx
+            # } >>/tmp/nginx-ee.log 2>&1
             echo -ne "       Checking nginx configuration           [${CGREEN}OK${CEND}]\\r"
             echo ""
             echo -e "       ${CGREEN}Nginx-ee was compiled successfully !${CEND}"
@@ -1170,7 +1167,7 @@ if [ "$PAGESPEED" = "y" ]; then
     _download_pagespeed
 fi
 _download_nginx
-_patch_nginx
+#_patch_nginx
 _configure_nginx
 _compile_nginx
 _updating_nginx_manual
